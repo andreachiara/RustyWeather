@@ -1,12 +1,9 @@
 use core::hash;
 use serde::{Deserialize, Serialize, de};
 use std::default;
+use std::env;
 use std::time::Duration;
 use ureq::Agent;
-
-const lat: f64 = 0;
-const lon: f64 = 0;
-const api_key: &str = "xxxxxxxxxxxxxxxxxxxxx";
 
 #[derive(Default, Serialize, Deserialize, Debug)]
 enum WheatherCode {
@@ -332,6 +329,10 @@ impl std::fmt::Display for APIResponse {
 }
 
 fn main() -> Result<(), ureq::Error> {
+    let lat = env::args().nth(1).unwrap_or(String::from("0.0"));
+    let lon = env::args().nth(2).unwrap_or(String::from("0.0"));
+    let api_key = env::args().nth(3).unwrap_or(String::from("0.0"));
+
     let mut config = Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(5)))
         .build();
