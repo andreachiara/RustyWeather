@@ -4,6 +4,7 @@ use core::hash;
 use serde::{Deserialize, Serialize, de};
 use std::default;
 use std::env;
+use std::fs;
 use std::time::Duration;
 use std::time::SystemTime;
 use ureq::Agent;
@@ -391,7 +392,9 @@ impl std::fmt::Display for Weather {
 #[derive(Serialize, Deserialize, Debug)]
 struct MeteoDataCurrent {
     dt: i64,
+    #[serde(default)]
     sunrise: i64,
+    #[serde(default)]
     sunset: i64,
     temp: f64,
     feels_like: f64,
@@ -467,11 +470,24 @@ fn get_icon(api_data: &APIResponse) -> String {
     icon
 }
 
+fn get_temp_range_color(temp: f64) -> String {
+    if temp < 0.0 {
+        String::from("\x1b[46;30m")
+    } else if temp < 28.0 {
+        String::from("\x1b[42;30m")
+    } else if temp < 35.0 {
+        String::from("\x1b[43;30m")
+    } else {
+        String::from("\x1b[41;30m")
+    }
+}
+
 fn print_short_weather(api_data: APIResponse) {
     println!(
-        "{} {} {}󰔄 {} {}",
-        api_data.current.weather[0].description,
+        "\x1b[47;30m {} {} \x1b[0m {} {}󰔄 \x1b[0m \x1b[30;43m {} \x1b[0m \x1b[30;44m {} \x1b[0m",
         get_icon(&api_data),
+        api_data.current.weather[0].description,
+        get_temp_range_color(api_data.current.temp),
         api_data.current.temp,
         Local
             .timestamp_opt(api_data.current.sunrise, 0)
@@ -487,8 +503,8 @@ fn print_short_weather(api_data: APIResponse) {
 fn main() -> Result<(), ureq::Error> {
     let lat = env::args().nth(1).unwrap_or(String::from("0.0"));
     let lon = env::args().nth(2).unwrap_or(String::from("0.0"));
-    let api_key = env::args().nth(3).unwrap_or(String::from("0.0"));
-
+    //    let api_key = env::args().nth(3).unwrap_or(String::from("0.0"));
+    let api_key = fs::read_to_string("./api_key");
     let mut config = Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(5)))
         .build();
