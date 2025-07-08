@@ -501,10 +501,18 @@ fn print_short_weather(api_data: APIResponse) {
 }
 
 fn main() -> Result<(), ureq::Error> {
+    let exe_path = env::current_exe().unwrap();
+    let parent_dir = exe_path.parent().unwrap();
+
     let lat = env::args().nth(1).unwrap_or(String::from("0.0"));
     let lon = env::args().nth(2).unwrap_or(String::from("0.0"));
     //    let api_key = env::args().nth(3).unwrap_or(String::from("0.0"));
-    let api_key = fs::read_to_string("./api_key.txt").unwrap_or_default();
+    //
+    let api_key_path_abs = format!("{}/api_key.txt", parent_dir.display());
+    let api_key_path_rel = format!("./api_key.txt");
+
+    let api_key = fs::read_to_string(api_key_path_abs)
+        .unwrap_or(fs::read_to_string(api_key_path_rel).unwrap_or_default());
     let api_key_sanitized = api_key.replace("\n", "");
     let mut config = Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(5)))
