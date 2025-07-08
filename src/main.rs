@@ -451,6 +451,39 @@ impl std::fmt::Display for APIResponse {
     }
 }
 
+fn get_icon(api_data: &APIResponse) -> String {
+    let current_time = Local.timestamp_opt(api_data.current.dt, 0).unwrap();
+    let sunrise = Local.timestamp_opt(api_data.current.sunrise, 0).unwrap();
+    let sunset = Local.timestamp_opt(api_data.current.sunset, 0).unwrap();
+    let is_day: bool = (current_time - sunrise >= TimeDelta::seconds(0))
+        && (current_time - sunset < TimeDelta::seconds(0));
+    let icon: String;
+    if is_day {
+        icon = get_icon_day(&api_data.current.weather[0].code);
+    } else {
+        icon = get_icon_night(&api_data.current.weather[0].code);
+    }
+
+    icon
+}
+
+fn print_short_weather(api_data: APIResponse) {
+    println!(
+        "{} {} {}󰔄 {} {}",
+        api_data.current.weather[0].description,
+        get_icon(&api_data),
+        api_data.current.temp,
+        Local
+            .timestamp_opt(api_data.current.sunrise, 0)
+            .unwrap()
+            .format("%H:%M"),
+        Local
+            .timestamp_opt(api_data.current.sunset, 0)
+            .unwrap()
+            .format("%H:%M")
+    )
+}
+
 fn main() -> Result<(), ureq::Error> {
     let lat = env::args().nth(1).unwrap_or(String::from("0.0"));
     let lon = env::args().nth(2).unwrap_or(String::from("0.0"));
@@ -464,13 +497,7 @@ fn main() -> Result<(), ureq::Error> {
     let exclude_str = "hourly,daily,minutely,alerts";
 
     let req_url = format!(
-        "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude={exclude_str}&appid={api_key}"
-    );
-    println!("{}", req_url);
-
-    println!(
-        "{}",
-        agent.get(&req_url).call()?.body_mut().read_to_string()?
+        "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude={exclude_str}&units=metric&appid={api_key}"
     );
 
     let mut body = agent
@@ -479,24 +506,8 @@ fn main() -> Result<(), ureq::Error> {
         .body_mut()
         .read_json::<APIResponse>()?;
     body.current.weather[0].code = body.current.weather[0].id.into();
-    let current_time = Local.timestamp_opt(body.current.dt, 0).unwrap();
-    let sunrise = Local.timestamp_opt(body.current.sunrise, 0).unwrap();
-    let sunset = Local.timestamp_opt(body.current.sunset, 0).unwrap();
-    println!(
-        "Current time: {}, difference from sunrise {}, sunset {}",
-        current_time.to_string(),
-        (current_time - sunrise).num_hours(),
-        (current_time - sunset).num_hours()
-    );
-    let is_day: bool = (current_time - sunrise >= TimeDelta::seconds(0))
-        && (current_time - sunset < TimeDelta::seconds(0));
-    let icon: String;
-    if is_day {
-        icon = get_icon_day(&body.current.weather[0].code);
-    } else {
-        icon = get_icon_night(&body.current.weather[0].code);
-    }
 
-    println!("{} {}", body, icon);
+    print_short_weather(body);
+
     Ok(())
 }
