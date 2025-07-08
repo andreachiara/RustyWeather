@@ -504,7 +504,8 @@ fn main() -> Result<(), ureq::Error> {
     let lat = env::args().nth(1).unwrap_or(String::from("0.0"));
     let lon = env::args().nth(2).unwrap_or(String::from("0.0"));
     //    let api_key = env::args().nth(3).unwrap_or(String::from("0.0"));
-    let api_key = fs::read_to_string("./api_key");
+    let api_key = fs::read_to_string("./api_key.txt").unwrap_or_default();
+    let api_key_sanitized = api_key.replace("\n", "");
     let mut config = Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(5)))
         .build();
@@ -513,7 +514,7 @@ fn main() -> Result<(), ureq::Error> {
     let exclude_str = "hourly,daily,minutely,alerts";
 
     let req_url = format!(
-        "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude={exclude_str}&units=metric&appid={api_key}"
+        "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude={exclude_str}&units=metric&appid={api_key_sanitized}"
     );
 
     let mut body = agent
