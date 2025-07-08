@@ -1,8 +1,11 @@
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, TimeZone, Utc};
+use chrono_tz;
 use core::hash;
 use serde::{Deserialize, Serialize, de};
 use std::default;
 use std::env;
 use std::time::Duration;
+use std::time::SystemTime;
 use ureq::Agent;
 
 #[derive(Default, Serialize, Deserialize, Debug)]
@@ -146,8 +149,10 @@ impl std::fmt::Display for WheatherCode {
         match self {
             Self::ThunderstormWithLightRain
             | Self::ThunderstormWithRain
-            | Self::ThunderstormWithHeavyRain
-            | Self::LightThunderstorm
+            | Self::ThunderstormWithHeavyRain => {
+                write!(f, "Thunderstorm With Rain")
+            }
+            Self::LightThunderstorm
             | Self::Thunderstorm
             | Self::HeavyThunderstorm
             | Self::RaggedThunderstorm => {
@@ -244,6 +249,124 @@ impl std::fmt::Display for WheatherCode {
         }
     }
 }
+fn get_icon_day(code: &WheatherCode) -> String {
+    match code {
+        WheatherCode::ThunderstormWithLightRain
+        | WheatherCode::ThunderstormWithRain
+        | WheatherCode::ThunderstormWithHeavyRain => String::from(""),
+        WheatherCode::LightThunderstorm
+        | WheatherCode::Thunderstorm
+        | WheatherCode::HeavyThunderstorm
+        | WheatherCode::RaggedThunderstorm => String::from(""),
+        WheatherCode::ThunderstormWithLightDrizzle
+        | WheatherCode::ThunderstormWithDrizzle
+        | WheatherCode::ThunderstormWithHeavyDrizzle => String::from(""),
+        WheatherCode::LightIntensityDrizzle
+        | WheatherCode::Drizzle
+        | WheatherCode::HeavyIntensityDrizzle
+        | WheatherCode::LightIntensityDrizzleRain
+        | WheatherCode::DrizzleRain
+        | WheatherCode::HeavyIntensityDrizzleRain
+        | WheatherCode::ShowerRainAndDrizzle
+        | WheatherCode::HeavyShowerRainAndDrizzle
+        | WheatherCode::ShowerDrizzle => String::from(""),
+        WheatherCode::LightRain
+        | WheatherCode::ModerateRain
+        | WheatherCode::HeavyIntensityRain
+        | WheatherCode::VeryHeavyRain
+        | WheatherCode::ExtremeRain
+        | WheatherCode::FreezingRain
+        | WheatherCode::LightIntensityShowerRain
+        | WheatherCode::ShowerRain
+        | WheatherCode::HeavyIntensityShowerRain
+        | WheatherCode::RaggedShowerRain => String::from(""),
+        WheatherCode::LightSnow
+        | WheatherCode::Snow
+        | WheatherCode::HeavySnow
+        | WheatherCode::Sleet => String::from(""),
+        WheatherCode::LightShowerSleet | WheatherCode::ShowerSleet => String::from(""),
+        WheatherCode::LightRainAndSnow
+        | WheatherCode::RainAndSnow
+        | WheatherCode::LightShowerSnow
+        | WheatherCode::ShowerSnow
+        | WheatherCode::HeavyShowerSnow => String::from(""),
+        WheatherCode::Mist => String::from(""),
+        WheatherCode::Smoke => String::from(""),
+        WheatherCode::Haze => String::from(""),
+        WheatherCode::SandDustWhirls => String::from(""),
+        WheatherCode::Fog => String::from(""),
+        WheatherCode::Sand => String::from(""),
+        WheatherCode::Dust => String::from(""),
+        WheatherCode::Ash => String::from(""),
+        WheatherCode::Squall => String::from(""),
+        WheatherCode::Tornado => String::from("󰼸"),
+        WheatherCode::Clear => String::from("󰖙"),
+        WheatherCode::FewClouds => String::from("󰖕"),
+        WheatherCode::ScatteredClouds => String::from(""),
+        WheatherCode::BrokenClouds => String::from(""),
+        WheatherCode::OvercastClouds => String::from(""),
+        _ => String::from(""),
+    }
+}
+
+fn get_icon_night(code: &WheatherCode) -> String {
+    match code {
+        WheatherCode::ThunderstormWithLightRain
+        | WheatherCode::ThunderstormWithRain
+        | WheatherCode::ThunderstormWithHeavyRain => String::from(""),
+        WheatherCode::LightThunderstorm
+        | WheatherCode::Thunderstorm
+        | WheatherCode::HeavyThunderstorm
+        | WheatherCode::RaggedThunderstorm => String::from(""),
+        WheatherCode::ThunderstormWithLightDrizzle
+        | WheatherCode::ThunderstormWithDrizzle
+        | WheatherCode::ThunderstormWithHeavyDrizzle => String::from(""),
+        WheatherCode::LightIntensityDrizzle
+        | WheatherCode::Drizzle
+        | WheatherCode::HeavyIntensityDrizzle
+        | WheatherCode::LightIntensityDrizzleRain
+        | WheatherCode::DrizzleRain
+        | WheatherCode::HeavyIntensityDrizzleRain
+        | WheatherCode::ShowerRainAndDrizzle
+        | WheatherCode::HeavyShowerRainAndDrizzle
+        | WheatherCode::ShowerDrizzle => String::from(""),
+        WheatherCode::LightRain
+        | WheatherCode::ModerateRain
+        | WheatherCode::HeavyIntensityRain
+        | WheatherCode::VeryHeavyRain
+        | WheatherCode::ExtremeRain
+        | WheatherCode::FreezingRain
+        | WheatherCode::LightIntensityShowerRain
+        | WheatherCode::ShowerRain
+        | WheatherCode::HeavyIntensityShowerRain
+        | WheatherCode::RaggedShowerRain => String::from(""),
+        WheatherCode::LightSnow | WheatherCode::Snow | WheatherCode::HeavySnow => String::from(""),
+        WheatherCode::Sleet | WheatherCode::LightShowerSleet | WheatherCode::ShowerSleet => {
+            String::from("")
+        }
+        WheatherCode::LightRainAndSnow
+        | WheatherCode::RainAndSnow
+        | WheatherCode::LightShowerSnow
+        | WheatherCode::ShowerSnow
+        | WheatherCode::HeavyShowerSnow => String::from(""),
+        WheatherCode::Mist => String::from(""),
+        WheatherCode::Smoke => String::from(""),
+        WheatherCode::Haze => String::from(""),
+        WheatherCode::SandDustWhirls => String::from(""),
+        WheatherCode::Fog => String::from(""),
+        WheatherCode::Sand => String::from(""),
+        WheatherCode::Dust => String::from(""),
+        WheatherCode::Ash => String::from(""),
+        WheatherCode::Squall => String::from(""),
+        WheatherCode::Tornado => String::from("󰼸"),
+        WheatherCode::Clear => String::from("󰖔"),
+        WheatherCode::FewClouds => String::from("󰼱"),
+        WheatherCode::ScatteredClouds => String::from(""),
+        WheatherCode::BrokenClouds => String::from(""),
+        WheatherCode::OvercastClouds => String::from(""),
+        _ => String::from(""),
+    }
+}
 
 fn to_weather_code(int: u16) {
     let wc: WheatherCode = int.into();
@@ -267,9 +390,9 @@ impl std::fmt::Display for Weather {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MeteoDataCurrent {
-    dt: u64,
-    sunrise: u64,
-    sunset: u64,
+    dt: i64,
+    sunrise: i64,
+    sunset: i64,
     temp: f64,
     feels_like: f64,
     pressure: u16,
@@ -356,6 +479,24 @@ fn main() -> Result<(), ureq::Error> {
         .body_mut()
         .read_json::<APIResponse>()?;
     body.current.weather[0].code = body.current.weather[0].id.into();
-    println!("{}", body);
+    let current_time = Local.timestamp_opt(body.current.dt, 0).unwrap();
+    let sunrise = Local.timestamp_opt(body.current.sunrise, 0).unwrap();
+    let sunset = Local.timestamp_opt(body.current.sunset, 0).unwrap();
+    println!(
+        "Current time: {}, difference from sunrise {}, sunset {}",
+        current_time.to_string(),
+        (current_time - sunrise).num_hours(),
+        (current_time - sunset).num_hours()
+    );
+    let is_day: bool = (current_time - sunrise >= TimeDelta::seconds(0))
+        && (current_time - sunset < TimeDelta::seconds(0));
+    let icon: String;
+    if is_day {
+        icon = get_icon_day(&body.current.weather[0].code);
+    } else {
+        icon = get_icon_night(&body.current.weather[0].code);
+    }
+
+    println!("{} {}", body, icon);
     Ok(())
 }
